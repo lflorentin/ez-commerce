@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
+import Stripe from 'stripe';
 import { activeEvents, totals, TERMS_VERSION } from '../shared/rules.js';
 import { configureLocal } from '../server/db.js';
 import { seed } from '../scripts/seed.js';
@@ -87,4 +89,41 @@ test('parcours catalogue, compte, isolation, commande, fidélité et avis', asyn
   await request('auth?action=logout', { method: 'POST', session });
   assert.equal((await request('cart', { session })).status, 401);
   assert.equal((await request('auth?action=login', { method: 'POST', data })).status, 200);
+});
+
+test('webhook Stripe signé, montant vérifié et traitement idempotent', async () => {
+  const stripeKey = 'sk_test_test_fixture';
+  const secret = 'whsec_test_fixture';
+  process.env.STRIPE_SECRET_KEY = stripeKey;
+  process.env.STRIPE_WEBHOOK_SECRET = secret;
+  try {
+    const stripe = new Stripe(stripeKey);
+    const userId = randomUUID();
+    const orderId = randomUUID();
+    const lines = [{ id: 'q20i', price: 3499, quantity: 3 }];
+    const amount = totals(lines, 'pickup');
+    await db.query('INSERT INTO users(id,email,name,password) VALUES ($1,$2,$3,$4)', [userId, 'webhook@example.test', 'Test Stripe', 'unusable']);
+    await db.query(`INSERT INTO orders(id,user_id,state,payment_mode,stripe_session,lines,delivery,amounts,terms)
+      VALUES($1,$2,'pending','stripe','cs_test_fixture',$3,$4,$5,$6)`,
+    [orderId, userId, JSON.stringify(lines), { method: 'pickup' }, amount, TERMS_VERSION]);
+    async function webhook(amountTotal, sign = true) {
+      const payload = JSON.stringify({
+        type: 'checkout.session.completed',
+        data: { object: { id: 'cs_test_fixture', currency: 'eur', amount_total: amountTotal, payment_status: 'paid', metadata: { order_id: orderId } } },
+      });
+      const signature = sign ? stripe.webhooks.generateTestHeaderString({ payload, secret }) : 'invalid';
+      return fetch(base + '/orders?action=webhook', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Stripe-Signature': signature }, body: payload,
+      });
+    }
+    assert.equal((await webhook(amount.total, false)).status, 400);
+    assert.equal((await webhook(amount.total - 1)).status, 409);
+    assert.equal((await webhook(amount.total)).status, 200);
+    assert.equal((await webhook(amount.total)).status, 200);
+    const { rows: [user] } = await db.query('SELECT spent,credit FROM users WHERE id=$1', [userId]);
+    assert.deepEqual(user, { spent: 10497, credit: 500 });
+  } finally {
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  }
 });

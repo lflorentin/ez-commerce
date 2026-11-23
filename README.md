@@ -2,7 +2,7 @@
 
 Boutique de démonstration en français pour des parcours d’achat en France métropolitaine. Le catalogue reprend des références de marques réelles. Les prix, promotions, délais, stocks, points relais et visuels sont illustratifs.
 
-[Maquette Figma](https://www.figma.com/design/1CfTaMmuyNpIsB7NVQBbdJ) · [Projet Vercel](https://vercel.com/lf-lorentin/ez-commerce) · [Conditions de vente et préparation commerciale](docs/conditions-de-vente.md)
+[Boutique en ligne](https://ez-commerce-lovat.vercel.app/) · [Maquette Figma](https://www.figma.com/design/1CfTaMmuyNpIsB7NVQBbdJ) · [Projet Vercel](https://vercel.com/lf-lorentin/ez-commerce) · [Conditions de vente et préparation commerciale](docs/conditions-de-vente.md)
 
 ## Fonctionnalités
 
@@ -41,7 +41,7 @@ npm test
 npm run build
 ```
 
-La suite utilise une base éphémère. Elle couvre le seuil de livraison, le calendrier et un parcours HTTP intégrant le filtrage, l’authentification, le contrôle d’origine, l’isolation des paniers, le stock, la fidélité et les avis.
+La suite utilise une base éphémère. Elle couvre le seuil de livraison, le calendrier et un parcours HTTP intégrant le filtrage, l’authentification, le contrôle d’origine, l’isolation des paniers, le stock, la fidélité et les avis. Elle vérifie également la signature, la cohérence du montant et la répétition des webhooks Stripe sur une base de test.
 
 ## Architecture
 
