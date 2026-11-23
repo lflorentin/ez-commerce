@@ -10,7 +10,8 @@
     "dev": "node --env-file-if-exists=.env scripts/dev.js",
     "build": "vite build",
     "test": "node --import ./scripts/test-env.js --test tests/*.test.js",
-    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js"
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "prebuild": "node scripts/migrate.js --if-configured"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

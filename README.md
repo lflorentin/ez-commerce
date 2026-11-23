@@ -68,8 +68,9 @@ Le dépôt contient `vercel.json` et le workflow GitHub Actions `.github/workflo
 
 | Variable | Configuration |
 | --- | --- |
-| `DATABASE_URL` | URL PostgreSQL dédiée à l’environnement, de préférence un pool TLS vérifié. Exécuter `npm run db:migrate` avec les droits de migration avant ouverture. |
-| `DEMO_PAYMENT` | `true` active la simulation si Stripe Test est absent. |
+| `DATABASE_URL` | URL PostgreSQL dédiée à l’environnement, de préférence un pool TLS vérifié. En dehors du build, `npm run db:migrate` initialise le schéma de test avec les droits de migration. |
+| `DATABASE_MIGRATION_URL` | Connexion du rôle de migration. Si définie, le build initialise le schéma et charge les références. |
+| `DEMO_PAYMENT` | `true` active la simulation si Stripe Test est absent. Avec `DATABASE_URL`, le build peut initialiser directement la base de démonstration. |
 | `PUBLIC_ORIGIN` | Origine HTTPS canonique pour un domaine personnalisé. Pour les domaines gérés par Vercel, les variables système de déploiement sont utilisées. |
 | `STRIPE_SECRET_KEY` | Clé serveur Stripe commençant par `sk_test_`. |
 | `STRIPE_WEBHOOK_SECRET` | Secret de signature de l’endpoint `/api/orders?action=webhook`. Activer `checkout.session.completed` et `checkout.session.expired`. |
